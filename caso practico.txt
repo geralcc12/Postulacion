@@ -1,0 +1,77 @@
+
+
+QUERYS**********************************************
+--Numero 1
+SELECT a.cliente_id, b.nombre_cliente, SUM(a.total) AS total_compras
+FROM venta a
+inner join cliente b on a.cliente_id = b.cliente_id
+WHERE EXTRACT(YEAR FROM fecha) = 2022
+GROUP BY a.cliente_id, b.cliente_id
+ORDER BY total_compras DESC
+LIMIT 1;
+
+
+
+--Numero 3
+WITH ventas_por_territorio AS (
+    SELECT l.territorio_id, SUM(v.total) AS total_ventas
+    FROM venta v
+    INNER JOIN locales l ON v.local_id = l.local_id
+    WHERE EXTRACT(YEAR FROM v.fecha) = 2022
+    GROUP BY l.territorio_id
+    ORDER BY total_ventas ASC
+    LIMIT 1
+)
+SELECT 
+    EXTRACT(MONTH FROM v.fecha) AS mes,  -- Agrupar por mes
+    SUM(v.total) AS total_ventas_mensuales
+FROM venta v
+INNER JOIN locales l ON v.local_id = l.local_id
+WHERE l.territorio_id = (SELECT territorio_id FROM ventas_por_territorio)
+  AND EXTRACT(YEAR FROM v.fecha) = 2022
+GROUP BY EXTRACT(MONTH FROM v.fecha) -- Asegurarse de agrupar por el mes
+ORDER BY mes;
+
+
+
+-- Numero 4
+SELECT a.producto_id, b.nom_produc,SUM(a.cantidad) AS total_vendido
+FROM venta a
+inner join producto b on b.producto_id = a.producto_id
+WHERE EXTRACT(YEAR FROM fecha) = 2022
+GROUP BY a.producto_id, b.nom_produc
+ORDER BY total_vendido DESC
+LIMIT 1;
+
+
+-- Numero 5
+select a.local_id, a.nombre_local from Locales a
+left join Venta v on v.local_id = a.local_id
+where v.local_id is null
+group by a.nombre_local, a.local_id
+
+-- numero 6
+WITH ventas_acme AS (
+    SELECT SUM(v.total) AS total_acme
+    FROM venta v
+	inner join producto b on b.producto_id = v.producto_id
+    WHERE b.comercializador = 'ACME' AND b.categoria_id = 1 AND EXTRACT(YEAR FROM v.fecha) = 2022
+)
+SELECT 
+    (total_acme * 1.15 * 0.5) AS venta_producto
+FROM ventas_acme;
+
+
+--Numero 7
+WITH ventas_acme AS (
+    SELECT SUM(a.total) AS total_acme, SUM(a.cantidad) AS total_cantidad
+    FROM venta a
+	inner join Producto b on b.producto_id = a.producto_id
+    WHERE b.comercializador = 'REBASA' AND b.categoria_id = 1 AND EXTRACT(YEAR FROM a.fecha) = 2022
+)
+SELECT 
+    ROUND((total_acme * 1.20) / total_cantidad, 2) AS "promedio rebasa"
+FROM ventas_acme;
+
+
+
